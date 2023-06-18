@@ -24,8 +24,27 @@ ORDER BY so_lan_goi;
 -- ngay_lam_hop_dong, ngay_ket_thuc, tong_tien (Với tổng tiền được tính theo công thức như sau: 
 -- Chi Phí Thuê + Số Lượng * Giá, với Số Lượng và Giá là từ bảng dich_vu_di_kem, hop_dong_chi_tiet) 
 -- cho tất cả các khách hàng đã từng đặt phòng. (những khách hàng nào chưa từng đặt phòng cũng phải hiển thị ra).
-
-
+SELECT 	KH.ma_khach_hang,
+		KH.ho_ten,
+        LK.ten_loai_khach,
+        HD.ma_hop_dong,
+        DV.ten_dich_vu,
+        HD.ngay_lam_hop_dong,
+        HD.ngay_ket_thuc,
+        (DV.chi_phi_thue + DVDK.gia * HDCT.so_luong) as tong_tien
+FROM loai_khach LK
+JOIN khach_hang KH using(ma_loai_khach)
+JOIN hop_dong HD USING(ma_khach_hang)
+JOIN hop_dong_chi_tiet HDCT USING(ma_hop_dong)
+JOIN dich_vu_di_kem DVDK USING(ma_dich_vu_di_kem)
+JOIN dich_vu DV USING(ma_dich_vu)
+GROUP BY KH.ma_khach_hang,
+		KH.ho_ten,
+        LK.ten_loai_khach,
+        HD.ma_hop_dong,
+        DV.ten_dich_vu,
+        HD.ngay_lam_hop_dong,
+        HD.ngay_ket_thuc;
 -- 6.	Hiển thị ma_dich_vu, ten_dich_vu, dien_tich, chi_phi_thue, ten_loai_dich_vu 
 -- của tất cả các loại dịch vụ chưa từng được khách hàng thực hiện đặt từ quý 1 
 -- của năm 2021 (Quý 1 là tháng 1, 2, 3).
@@ -107,18 +126,17 @@ ORDER BY month(ngay_lam_hop_dong) ASC;
 -- 10.	Hiển thị thông tin tương ứng với từng hợp đồng thì đã sử dụng bao nhiêu dịch vụ đi kèm.
 -- Kết quả hiển thị bao gồm ma_hop_dong, ngay_lam_hop_dong, ngay_ket_thuc, 
 -- tien_dat_coc, so_luong_dich_vu_di_kem (được tính dựa trên việc sum so_luong ở dich_vu_di_kem).
-SET @row_number = 0;
-SELECT (@row_number:=@row_number + 1) as ma_hop_dong ,ngay_lam_hop_dong,ngay_ket_thuc
+
+SELECT  ma_hop_dong ,ngay_lam_hop_dong,ngay_ket_thuc
 FROM hop_dong
-GROUP BY ngay_lam_hop_dong,ngay_ket_thuc;
+GROUP BY  ma_hop_dong,ngay_lam_hop_dong,ngay_ket_thuc;
 -- 11.	Hiển thị thông tin các dịch vụ đi kèm đã được sử dụng bởi những 
 -- khách hàng có ten_loai_khach là “Diamond” và có dia_chi ở “Vinh” hoặc “Quảng Ngãi”.
-SELECT ma_dich_vu_di_kem,ten_dich_vu_di_kem FROM dich_vu_di_kem
-JOIN hop_dong_chi_tiet USING(ma_dich_vu_di_kem)
-JOIN hop_dong USING(ma_hop_dong)
-WHERE ( SELECT dia_chi 
-		FROM khach_hang
-
+SELECT DVDK.ma_dich_vu_di_kem,DVDK.ten_dich_vu_di_kem FROM dich_vu_di_kem DVDK
+JOIN hop_dong_chi_tiet HDCT USING(ma_dich_vu_di_kem)
+JOIN hop_dong HD USING(ma_hop_dong)
+JOIN khach_hang KH USING(ma_khach_hang)
+WHERE KH.dia_chi LIKE '%Vinh%' OR KH.dia_chi LIKE '%Quảng Ngãi%'
 -- 12.	Hiển thị thông tin ma_hop_dong, ho_ten (nhân viên), ho_ten (khách hàng), so_dien_thoai (khách hàng), 
 -- ten_dich_vu, so_luong_dich_vu_di_kem (được tính dựa trên việc sum so_luong ở dich_vu_di_kem), tien_dat_coc 
 -- của tất cả các dịch vụ đã từng được khách hàng đặt vào 3 tháng cuối năm 2020 nhưng chưa từng được khách hàng 
